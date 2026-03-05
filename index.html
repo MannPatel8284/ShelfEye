@@ -5,49 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ShelfEye Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <!-- React 18 (UMD) + Babel for JSX in-browser -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #F0F4FF;
-      color: #1a1a2e;
-      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, #1b2735 0, transparent 55%),
+        radial-gradient(circle at top right, #0f2027 0, transparent 55%),
+        radial-gradient(circle at bottom, #111827 0, #020617 55%);
+      color: #e5f0ff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      display: flex;
+      flex-direction: column;
     }
 
     /* ── TOP BAR ── */
     .topbar {
-      background: linear-gradient(135deg, #1B6CA8, #0D3B6E);
-      padding: 18px 30px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(120deg, rgba(15,23,42,0.98), rgba(3,7,18,0.98));
+      padding: 18px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 4px 15px rgba(27,108,168,0.4);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.7);
+      border-bottom: 1px solid rgba(148,163,184,0.15);
+      backdrop-filter: blur(16px);
     }
     .topbar h1 {
       font-size: 26px;
-      font-weight: bold;
-      color: white;
-      letter-spacing: 1px;
+      font-weight: 700;
+      color: #f9fafb;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .react-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #e9f7ff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      vertical-align: middle;
     }
     .topbar .subtitle {
-      font-size: 13px;
-      color: #cce8ff;
-      margin-top: 3px;
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
     }
     .live {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.15);
-      padding: 8px 16px;
-      border-radius: 20px;
-      color: white;
+      gap: 10px;
+      background: radial-gradient(circle at 0 50%, rgba(96,165,250,0.7), rgba(15,23,42,0.9));
+      padding: 8px 18px;
+      border-radius: 999px;
+      color: #e5f0ff;
       font-size: 13px;
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 0 25px rgba(59,130,246,0.55);
     }
     .dot {
-      width: 10px; height: 10px;
-      background: #00ff88;
-      border-radius: 50%;
+      width: 9px;
+      height: 9px;
+      background: #22c55e;
+      border-radius: 999px;
+      box-shadow: 0 0 18px rgba(74,222,128,0.9);
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
@@ -58,460 +95,676 @@
     /* ── STAT CARDS ── */
     .cards {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      padding: 25px 30px 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      padding: 22px 32px 8px;
     }
     .card {
-      background: white;
-      border-radius: 16px;
-      padding: 22px;
-      text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      border-top: 4px solid #1B6CA8;
-      transition: transform 0.2s;
+      position: relative;
+      background: radial-gradient(circle at top, rgba(31,41,55,0.95), rgba(15,23,42,0.98));
+      border-radius: 18px;
+      padding: 18px 18px 20px;
+      text-align: left;
+      box-shadow:
+        0 18px 40px rgba(0,0,0,0.85),
+        0 0 1px rgba(148,163,184,0.3);
+      border: 1px solid rgba(148,163,184,0.35);
+      overflow: hidden;
+      transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out;
     }
-    .card:hover { transform: translateY(-3px); }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background: radial-gradient(circle at top right, rgba(56,189,248,0.18), transparent 55%);
+      opacity: 0;
+      transition: opacity 0.25s ease-out;
+      pointer-events: none;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow:
+        0 24px 55px rgba(15,23,42,0.95),
+        0 0 1px rgba(191,219,254,0.35);
+      border-color: rgba(96,165,250,0.7);
+    }
+    .card:hover::before {
+      opacity: 1;
+    }
     .card .value {
-      font-size: 46px;
-      font-weight: bold;
-      color: #1B6CA8;
+      font-size: 40px;
+      font-weight: 700;
+      color: #e5f0ff;
+      letter-spacing: 0.04em;
     }
     .card .label {
-      font-size: 13px;
-      color: #888;
-      margin-top: 6px;
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 8px;
       font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
     /* ── MAIN GRID ── */
     .grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.3fr 1fr;
       gap: 20px;
-      padding: 20px 30px;
+      padding: 18px 32px 10px;
     }
     .grid-3 {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      padding: 0 30px 25px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      padding: 4px 32px 20px;
     }
 
     /* ── PANELS ── */
     .panel {
-      background: white;
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      background: radial-gradient(circle at top, rgba(17,24,39,0.96), rgba(3,7,18,0.98));
+      border-radius: 20px;
+      padding: 18px 18px 20px;
+      box-shadow:
+        0 22px 55px rgba(0,0,0,0.9),
+        0 0 1px rgba(148,163,184,0.4);
+      border: 1px solid rgba(148,163,184,0.4);
+      overflow: hidden;
     }
     .panel h2 {
-      font-size: 14px;
-      color: #888;
-      margin-bottom: 18px;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 14px;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 0.18em;
       font-weight: 600;
     }
 
     /* ── HEATMAP ── */
     .heatmap {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
       gap: 10px;
       height: 240px;
     }
     .heatmap-cell {
-      border-radius: 12px;
+      border-radius: 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      transition: all 0.5s;
+      transition: all 0.18s ease-out;
       cursor: default;
-      border: 2px solid transparent;
+      border: 1px solid transparent;
+      background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(15,23,42,0.98));
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.95);
     }
     .heatmap-cell:hover {
-      transform: scale(1.05);
-      border-color: #1B6CA8;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow:
+        0 14px 35px rgba(15,23,42,0.85),
+        0 0 0 1px rgba(148,163,184,0.4);
     }
     .heatmap-cell .cell-count {
-      font-size: 26px;
-      font-weight: bold;
+      font-size: 24px;
+      font-weight: 700;
     }
     .heatmap-cell .cell-name {
       font-size: 10px;
-      opacity: 0.85;
+      opacity: 0.9;
       text-align: center;
-      margin-top: 4px;
+      margin-top: 5px;
       font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
 
     /* ── AISLE CARDS ── */
     .aisle-card {
-      background: white;
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      background: radial-gradient(circle at top, rgba(17,24,39,0.96), rgba(3,7,18,0.98));
+      border-radius: 20px;
+      padding: 18px 18px 16px;
+      box-shadow:
+        0 18px 45px rgba(0,0,0,0.9),
+        0 0 1px rgba(148,163,184,0.35);
+      border: 1px solid rgba(75,85,99,0.8);
     }
     .aisle-card h3 {
-      color: #1B6CA8;
-      font-size: 18px;
-      margin-bottom: 16px;
-      font-weight: bold;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #F0F4FF;
+      color: #e5f0ff;
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(55,65,81,0.9);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
     }
     .aisle-stat {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #f5f5f5;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(31,41,55,0.85);
     }
     .aisle-stat:last-child { border-bottom: none; }
     .aisle-stat .stat-label {
-      font-size: 14px;
-      color: #666;
+      font-size: 13px;
+      color: #9ca3af;
       font-weight: 500;
     }
     .badge {
       display: inline-block;
-      padding: 4px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: bold;
-      color: white;
-      min-width: 40px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f9fafb;
+      min-width: 44px;
       text-align: center;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
-    .badge-people { background: #1B6CA8; }
-    .badge-glance { background: #29ABE2; }
-    .badge-browse { background: #F5A623; }
-    .badge-dwell  { background: #27AE60; }
+    .badge-people { background: linear-gradient(135deg, #60a5fa, #38bdf8); }
+    .badge-glance { background: linear-gradient(135deg, #22c55e, #4ade80); }
+    .badge-browse { background: linear-gradient(135deg, #eab308, #facc15); }
+    .badge-dwell  { background: linear-gradient(135deg, #f97316, #fb923c); }
 
     /* ── LEGEND ── */
     .legend {
       display: flex;
       gap: 16px;
-      margin-top: 12px;
+      margin-top: 14px;
       flex-wrap: wrap;
     }
     .legend-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
-      color: #666;
+      font-size: 11px;
+      color: #9ca3af;
     }
     .legend-dot {
-      width: 12px; height: 12px;
+      width: 12px;
+      height: 12px;
       border-radius: 3px;
+      box-shadow: 0 0 10px rgba(15,23,42,0.7);
     }
 
     /* ── FOOTER ── */
     .footer {
       text-align: center;
-      padding: 15px;
-      font-size: 12px;
-      color: #aaa;
-      background: white;
-      margin: 0 30px 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 14px 24px 18px;
+      font-size: 11px;
+      color: #6b7280;
+      background: radial-gradient(circle at top, rgba(15,23,42,0.96), rgba(3,7,18,0.98));
+      margin: 0 26px 18px;
+      border-radius: 16px;
+      box-shadow:
+        0 16px 38px rgba(0,0,0,0.85),
+        0 0 1px rgba(148,163,184,0.35);
+      border: 1px solid rgba(55,65,81,0.9);
     }
   </style>
 </head>
 <body>
+  <div id="root"></div>
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div>
-    <h1>👁 ShelfEye</h1>
-    <div class="subtitle">Retail Attention Intelligence Dashboard</div>
-  </div>
-  <div class="live">
-    <div class="dot"></div>
-    <span id="last-updated">Loading...</span>
-  </div>
-</div>
+  {% raw %}
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-<!-- STAT CARDS -->
-<div class="cards">
-  <div class="card">
-    <div class="value" id="total-people">0</div>
-    <div class="label">👥 Total People This Session</div>
-  </div>
-  <div class="card">
-    <div class="value" id="active-now">0</div>
-    <div class="label">🟢 In Store Right Now</div>
-  </div>
-  <div class="card">
-    <div class="value" id="total-visits">0</div>
-    <div class="label">📍 Total Aisle Visits</div>
-  </div>
-  <div class="card">
-    <div class="value" id="top-aisle">—</div>
-    <div class="label">🏆 Most Popular Aisle</div>
-  </div>
-</div>
+    const ZONES = [
+      "Aisle 1 - Top Shelf",    "Aisle 2 - Top Shelf",    "Aisle 3 - Top Shelf",
+      "Aisle 1 - Eye Level",    "Aisle 2 - Eye Level",    "Aisle 3 - Eye Level",
+      "Aisle 1 - Bottom Shelf", "Aisle 2 - Bottom Shelf", "Aisle 3 - Bottom Shelf",
+    ];
 
-<!-- CHARTS ROW -->
-<div class="grid">
+    const AISLES = ["Aisle 1", "Aisle 2", "Aisle 3"];
 
-  <!-- HEATMAP -->
-  <div class="panel">
-    <h2>🗺️ Store Attention Heatmap</h2>
-    <div class="heatmap" id="heatmap"></div>
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#C0392B"></div> High
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#E67E22"></div> Medium
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#27AE60"></div> Low
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:#ECF0F1;border:1px solid #ddd"></div> None
-      </div>
-    </div>
-  </div>
-
-  <!-- BAR CHART -->
-  <div class="panel">
-    <h2>📊 Visits Per Aisle Breakdown</h2>
-    <canvas id="barChart" height="220"></canvas>
-  </div>
-
-</div>
-
-<!-- AISLE DETAIL CARDS -->
-<div class="grid-3">
-
-  <div class="aisle-card">
-    <h3>🛒 Aisle 1</h3>
-    <div class="aisle-stat">
-      <span class="stat-label">👥 Unique People</span>
-      <span class="badge badge-people" id="a1-people">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">👀 Glances (3–8s)</span>
-      <span class="badge badge-glance" id="a1-glance">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">🔍 Browses (8–30s)</span>
-      <span class="badge badge-browse" id="a1-browse">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">⏱️ Dwells (30s+)</span>
-      <span class="badge badge-dwell" id="a1-dwell">0</span>
-    </div>
-  </div>
-
-  <div class="aisle-card">
-    <h3>🛒 Aisle 2</h3>
-    <div class="aisle-stat">
-      <span class="stat-label">👥 Unique People</span>
-      <span class="badge badge-people" id="a2-people">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">👀 Glances (3–8s)</span>
-      <span class="badge badge-glance" id="a2-glance">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">🔍 Browses (8–30s)</span>
-      <span class="badge badge-browse" id="a2-browse">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">⏱️ Dwells (30s+)</span>
-      <span class="badge badge-dwell" id="a2-dwell">0</span>
-    </div>
-  </div>
-
-  <div class="aisle-card">
-    <h3>🛒 Aisle 3</h3>
-    <div class="aisle-stat">
-      <span class="stat-label">👥 Unique People</span>
-      <span class="badge badge-people" id="a3-people">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">👀 Glances (3–8s)</span>
-      <span class="badge badge-glance" id="a3-glance">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">🔍 Browses (8–30s)</span>
-      <span class="badge badge-browse" id="a3-browse">0</span>
-    </div>
-    <div class="aisle-stat">
-      <span class="stat-label">⏱️ Dwells (30s+)</span>
-      <span class="badge badge-dwell" id="a3-dwell">0</span>
-    </div>
-  </div>
-
-</div>
-
-<div class="footer">
-  👁 ShelfEye — Retail Attention Intelligence &nbsp;•&nbsp;
-  Refreshes every 3 seconds &nbsp;•&nbsp;
-  <span id="footer-time"></span>
-</div>
-
-<script>
-// ── HEATMAP CELLS ──────────────────────────
-const ZONES = [
-  "Aisle 1 - Top Shelf",    "Aisle 2 - Top Shelf",    "Aisle 3 - Top Shelf",
-  "Aisle 1 - Eye Level",    "Aisle 2 - Eye Level",    "Aisle 3 - Eye Level",
-  "Aisle 1 - Bottom Shelf", "Aisle 2 - Bottom Shelf", "Aisle 3 - Bottom Shelf",
-];
-
-const heatmapEl = document.getElementById("heatmap");
-ZONES.forEach(zone => {
-  const cell = document.createElement("div");
-  cell.className = "heatmap-cell";
-  cell.id = "cell-" + zone.replace(/[^a-zA-Z0-9]/g, "-");
-  cell.style.background = "#ECF0F1";
-  cell.innerHTML = `
-    <span class="cell-count" style="color:#999">0</span>
-    <span class="cell-name" style="color:#aaa">
-      ${zone.replace("Aisle ","A").replace(" Shelf","")}
-    </span>
-  `;
-  heatmapEl.appendChild(cell);
-});
-
-// ── BAR CHART ──────────────────────────────
-const ctx = document.getElementById("barChart").getContext("2d");
-const barChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-    labels: ["Aisle 1", "Aisle 2", "Aisle 3"],
-    datasets: [
-      { label: "Glance",  data:[0,0,0], backgroundColor:"#29ABE2", borderRadius:4 },
-      { label: "Browse",  data:[0,0,0], backgroundColor:"#F5A623", borderRadius:4 },
-      { label: "Dwell",   data:[0,0,0], backgroundColor:"#27AE60", borderRadius:4 },
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        labels: { color:"#555", font:{ size:12 } }
-      }
-    },
-    scales: {
-      x: {
-        stacked: true,
-        ticks: { color:"#666" },
-        grid:  { color:"#f0f0f0" }
-      },
-      y: {
-        stacked: true,
-        ticks: { color:"#666" },
-        grid:  { color:"#f0f0f0" }
-      }
+    function heatColor(value, max) {
+      if (max === 0 || value === 0) return { bg: "#ECF0F1", text: "#999" };
+      const ratio = value / max;
+      if (ratio > 0.66) return { bg: "#C0392B", text: "#fff" };
+      if (ratio > 0.33) return { bg: "#E67E22", text: "#fff" };
+      return { bg: "#27AE60", text: "#fff" };
     }
-  }
-});
 
-// ── HEATMAP COLOR ──────────────────────────
-function heatColor(value, max) {
-  if (max === 0 || value === 0)
-    return { bg:"#ECF0F1", text:"#999" };
-  const ratio = value / max;
-  if (ratio > 0.66) return { bg:"#C0392B", text:"#fff" };
-  if (ratio > 0.33) return { bg:"#E67E22", text:"#fff" };
-  return { bg:"#27AE60", text:"#fff" };
-}
+    function TopBar({ lastUpdated }) {
+      return (
+        <div className="topbar">
+          <div>
+            <h1>👁 ShelfEye</h1>
+            <div className="subtitle">Retail Attention Intelligence Dashboard</div>
+          </div>
+          <div className="live">
+            <div className="dot" />
+            <span>{lastUpdated || "Loading..."}</span>
+          </div>
+        </div>
+      );
+    }
 
-// ── FETCH & UPDATE ─────────────────────────
-function update() {
-  fetch("/data")
-    .then(r => r.json())
-    .then(data => {
-      const stats  = data.aisle_stats || {};
-      const aisles = ["Aisle 1", "Aisle 2", "Aisle 3"];
+    function StatCards({ totalPeople, activeNow, totalVisits, topAisle, engagementScore }) {
+      return (
+        <div className="cards">
+          <div className="card">
+            <div className="value">{totalPeople}</div>
+            <div className="label">👥 Total People This Session</div>
+          </div>
+          <div className="card">
+            <div className="value">{activeNow}</div>
+            <div className="label">🟢 In Store Right Now</div>
+          </div>
+          <div className="card">
+            <div className="value">{totalVisits}</div>
+            <div className="label">📍 Total Aisle Visits</div>
+          </div>
+          <div className="card">
+            <div className="value">{topAisle ? topAisle.replace("Aisle ", "A") : "—"}</div>
+            <div className="label">🏆 Most Popular Aisle</div>
+          </div>
+        </div>
+      );
+    }
 
-      // Stat cards
-      document.getElementById("total-people").textContent =
-        data.total_people_seen || 0;
-      document.getElementById("active-now").textContent =
-        data.active_now || 0;
+    function AttentionGauge({ engagementScore }) {
+      const radius = 70;
+      const stroke = 10;
+      const normalizedRadius = radius - stroke;
+      const circumference = normalizedRadius * 2 * Math.PI;
+      const clamped = Math.max(0, Math.min(100, engagementScore));
+      const offset = circumference - (clamped / 100) * circumference;
 
-      let totalVisits = 0;
-      let topAisle    = "—";
-      let topCount    = 0;
+      return (
+        <div
+          style={{
+            gridColumn: "span 2",
+            margin: "10px 32px -2px",
+            display: "flex",
+            alignItems: "center",
+            gap: "22px",
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              width: 180,
+              height: 180,
+              borderRadius: "999px",
+              background:
+                "radial-gradient(circle at 30% 0%, rgba(56,189,248,0.25), transparent 55%), radial-gradient(circle at 50% 120%, rgba(59,130,246,0.45), rgba(15,23,42,1))",
+              boxShadow:
+                "0 20px 55px rgba(15,23,42,0.9), 0 0 1px rgba(191,219,254,0.25)",
+              border: "1px solid rgba(148,163,184,0.4)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <svg
+              height={radius * 2}
+              width={radius * 2}
+              style={{ transform: "rotate(-120deg)" }}
+            >
+              <defs>
+                <linearGradient id="gaugeStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#22c55e" />
+                  <stop offset="50%" stopColor="#eab308" />
+                  <stop offset="100%" stopColor="#f97316" />
+                </linearGradient>
+              </defs>
+              <circle
+                stroke="rgba(15,23,42,0.8)"
+                fill="transparent"
+                strokeWidth={stroke}
+                strokeLinecap="round"
+                r={normalizedRadius}
+                cx={radius}
+                cy={radius}
+                style={{ opacity: 0.8 }}
+              />
+              <circle
+                stroke="url(#gaugeStroke)"
+                fill="transparent"
+                strokeWidth={stroke}
+                strokeLinecap="round"
+                r={normalizedRadius}
+                cx={radius}
+                cy={radius}
+                strokeDasharray={`${circumference} ${circumference}`}
+                strokeDashoffset={offset}
+                style={{
+                  transition: "stroke-dashoffset 0.45s ease-out",
+                  filter: "drop-shadow(0 0 16px rgba(59,130,246,0.9))",
+                }}
+              />
+            </svg>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: "#9ca3af",
+                }}
+              >
+                Attention
+              </div>
+              <div
+                style={{
+                  fontSize: 38,
+                  fontWeight: 700,
+                  color: "#e5f0ff",
+                  letterSpacing: "0.06em",
+                }}
+              >
+                {Math.round(clamped)}
+                <span style={{ fontSize: 16, marginLeft: 2 }}>%</span>
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#6b7280",
+                  marginTop: 4,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.16em",
+                }}
+              >
+                Engagement Index
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              flex: 1,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 13,
+                color: "#9ca3af",
+                textTransform: "uppercase",
+                letterSpacing: "0.16em",
+              }}
+            >
+              Live Store Telemetry
+            </div>
+            <div
+              style={{
+                fontSize: 22,
+                fontWeight: 600,
+                color: "#e5f0ff",
+              }}
+            >
+              {clamped >= 70
+                ? "High product engagement"
+                : clamped >= 40
+                ? "Moderate engagement"
+                : "Low current engagement"}
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                maxWidth: 420,
+                lineHeight: 1.5,
+              }}
+            >
+              Dwell time is weighted highest, then browse and glance. The gauge
+              reflects how intensely shoppers are interacting with shelves in
+              the last few minutes.
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-      aisles.forEach(a => {
-        const s = stats[a] || {};
-        const v = (s.glance||0) + (s.browse||0) + (s.dwell||0);
-        totalVisits += v;
-        if (v > topCount) { topCount = v; topAisle = a; }
-      });
-
-      document.getElementById("total-visits").textContent = totalVisits;
-      document.getElementById("top-aisle").textContent =
-        topAisle.replace("Aisle ","A");
-
-      // Aisle cards
-      const ids = ["a1","a2","a3"];
-      aisles.forEach((aisle, i) => {
-        const s  = stats[aisle] || {};
-        const id = ids[i];
-        document.getElementById(`${id}-people`).textContent = s.unique_people||0;
-        document.getElementById(`${id}-glance`).textContent = s.glance||0;
-        document.getElementById(`${id}-browse`).textContent = s.browse||0;
-        document.getElementById(`${id}-dwell`).textContent  = s.dwell||0;
-      });
-
-      // Bar chart
-      barChart.data.datasets[0].data = aisles.map(a=>(stats[a]||{}).glance||0);
-      barChart.data.datasets[1].data = aisles.map(a=>(stats[a]||{}).browse||0);
-      barChart.data.datasets[2].data = aisles.map(a=>(stats[a]||{}).dwell||0);
-      barChart.update();
-
-      // Heatmap
+    function Heatmap({ aisleStats }) {
       const allCounts = ZONES.map(zone => {
-        const aisle = aisles.find(a => zone.includes(a));
-        const s = stats[aisle] || {};
-        return (s.glance||0) + (s.browse||0) + (s.dwell||0);
+        const aisle = AISLES.find(a => zone.includes(a));
+        const s = aisleStats[aisle] || {};
+        return (s.glance || 0) + (s.browse || 0) + (s.dwell || 0);
       });
       const maxCount = Math.max(...allCounts, 1);
 
-      ZONES.forEach(zone => {
-        const cellId = "cell-" + zone.replace(/[^a-zA-Z0-9]/g, "-");
-        const cell   = document.getElementById(cellId);
-        if (!cell) return;
+      return (
+        <div className="panel">
+          <h2>🗺️ Store Attention Heatmap</h2>
+          <div className="heatmap">
+            {ZONES.map((zone, index) => {
+              const aisle = AISLES.find(a => zone.includes(a));
+              const s = aisleStats[aisle] || {};
+              const count = (s.glance || 0) + (s.browse || 0) + (s.dwell || 0);
+              const { bg, text } = heatColor(count, maxCount);
+              return (
+                <div
+                  key={zone}
+                  className="heatmap-cell"
+                  style={{ background: bg }}
+                >
+                  <span className="cell-count" style={{ color: text }}>{count}</span>
+                  <span className="cell-name" style={{ color: text }}>
+                    {zone.replace("Aisle ", "A").replace(" Shelf", "")}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="legend">
+            <div className="legend-item">
+              <div className="legend-dot" style={{ background: "#C0392B" }}></div> High
+            </div>
+            <div className="legend-item">
+              <div className="legend-dot" style={{ background: "#E67E22" }}></div> Medium
+            </div>
+            <div className="legend-item">
+              <div className="legend-dot" style={{ background: "#27AE60" }}></div> Low
+            </div>
+            <div className="legend-item">
+              <div className="legend-dot" style={{ background: "#ECF0F1", border: "1px solid #ddd" }}></div> None
+            </div>
+          </div>
+        </div>
+      );
+    }
 
-        const aisle = aisles.find(a => zone.includes(a));
-        const s     = stats[aisle] || {};
-        const count = (s.glance||0) + (s.browse||0) + (s.dwell||0);
-        const { bg, text } = heatColor(count, maxCount);
+    function BarChartPanel({ aisleStats }) {
+      const canvasRef = useRef(null);
+      const chartRef = useRef(null);
 
-        cell.style.background = bg;
-        cell.querySelector(".cell-count").style.color = text;
-        cell.querySelector(".cell-count").textContent = count;
-        cell.querySelector(".cell-name").style.color  = text;
-      });
+      useEffect(() => {
+        const ctx = canvasRef.current.getContext("2d");
+        chartRef.current = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: AISLES,
+            datasets: [
+              { label: "Glance", data: [0, 0, 0], backgroundColor: "#29ABE2", borderRadius: 4 },
+              { label: "Browse", data: [0, 0, 0], backgroundColor: "#F5A623", borderRadius: 4 },
+              { label: "Dwell",  data: [0, 0, 0], backgroundColor: "#27AE60", borderRadius: 4 },
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: "#555", font: { size: 12 } } }
+            },
+            scales: {
+              x: {
+                stacked: true,
+                ticks: { color: "#666" },
+                grid: { color: "#f0f0f0" }
+              },
+              y: {
+                stacked: true,
+                ticks: { color: "#666" },
+                grid: { color: "#f0f0f0" }
+              }
+            }
+          }
+        });
 
-      // Last updated
-      const now = new Date();
-      const t   = now.toLocaleTimeString();
-      document.getElementById("last-updated").textContent =
-        "Live • Updated " + t;
-      document.getElementById("footer-time").textContent =
-        "Session started today • " + t;
-    })
-    .catch(() => {
-      document.getElementById("last-updated").textContent =
-        "Waiting for data...";
-    });
-}
+        return () => {
+          if (chartRef.current) {
+            chartRef.current.destroy();
+          }
+        };
+      }, []);
 
-update();
-setInterval(update, 3000);
-</script>
+      useEffect(() => {
+        if (!chartRef.current) return;
+        const chart = chartRef.current;
+        chart.data.datasets[0].data = AISLES.map(a => (aisleStats[a] || {}).glance || 0);
+        chart.data.datasets[1].data = AISLES.map(a => (aisleStats[a] || {}).browse || 0);
+        chart.data.datasets[2].data = AISLES.map(a => (aisleStats[a] || {}).dwell  || 0);
+        chart.update();
+      }, [aisleStats]);
+
+      return (
+        <div className="panel">
+          <h2>📊 Visits Per Aisle Breakdown</h2>
+          <canvas ref={canvasRef} height="220"></canvas>
+        </div>
+      );
+    }
+
+    function AisleCard({ name, stats }) {
+      const prefix = name.replace("Aisle ", "A");
+      return (
+        <div className="aisle-card">
+          <h3>🛒 {name}</h3>
+          <div className="aisle-stat">
+            <span className="stat-label">👥 Unique People</span>
+            <span className="badge badge-people">{stats.unique_people || 0}</span>
+          </div>
+          <div className="aisle-stat">
+            <span className="stat-label">👀 Glances (3–8s)</span>
+            <span className="badge badge-glance">{stats.glance || 0}</span>
+          </div>
+          <div className="aisle-stat">
+            <span className="stat-label">🔍 Browses (8–30s)</span>
+            <span className="badge badge-browse">{stats.browse || 0}</span>
+          </div>
+          <div className="aisle-stat">
+            <span className="stat-label">⏱️ Dwells (30s+)</span>
+            <span className="badge badge-dwell">{stats.dwell || 0}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function Footer({ footerTime }) {
+      return (
+        <div className="footer">
+          👁 ShelfEye — Retail Attention Intelligence &nbsp;•&nbsp;
+          Refreshes every 3 seconds &nbsp;•&nbsp;
+          <span>{footerTime}</span>
+        </div>
+      );
+    }
+
+    function App() {
+      const [totalPeople, setTotalPeople] = useState(0);
+      const [activeNow, setActiveNow] = useState(0);
+      const [aisleStats, setAisleStats] = useState({});
+      const [totalVisits, setTotalVisits] = useState(0);
+      const [topAisle, setTopAisle] = useState("");
+      const [lastUpdated, setLastUpdated] = useState("");
+      const [footerTime, setFooterTime] = useState("");
+      const [engagementScore, setEngagementScore] = useState(0);
+
+      useEffect(() => {
+        function fetchData() {
+          fetch("/data")
+            .then(r => r.json())
+            .then(data => {
+              const stats = data.aisle_stats || {};
+              setAisleStats(stats);
+              setTotalPeople(data.total_people_seen || 0);
+              setActiveNow(data.active_now || 0);
+
+              let total = 0;
+              let bestAisle = "";
+              let bestCount = 0;
+              AISLES.forEach(a => {
+                const s = stats[a] || {};
+                const count = (s.glance || 0) + (s.browse || 0) + (s.dwell || 0);
+                total += count;
+                if (count > bestCount) {
+                  bestCount = count;
+                  bestAisle = a;
+                }
+              });
+              setTotalVisits(total);
+              setTopAisle(bestAisle);
+
+              // Simple engagement index: dwell is weighted highest,
+              // then browse, then glance, normalized to ~0–100.
+              let raw = 0;
+              AISLES.forEach(a => {
+                const s = stats[a] || {};
+                raw += (s.glance || 0) * 1 + (s.browse || 0) * 3 + (s.dwell || 0) * 7;
+              });
+              const score = Math.max(0, Math.min(100, raw));
+              setEngagementScore(score);
+
+              const now = new Date();
+              const t = now.toLocaleTimeString();
+              setLastUpdated(`Live • Updated ${t}`);
+              setFooterTime(`Session started today • ${t}`);
+            })
+            .catch(() => {
+              setLastUpdated("Waiting for data...");
+            });
+        }
+
+        fetchData();
+        const id = setInterval(fetchData, 3000);
+        return () => clearInterval(id);
+      }, []);
+
+      return (
+        <>
+          <TopBar lastUpdated={lastUpdated} />
+          <AttentionGauge engagementScore={engagementScore} />
+          <StatCards
+            totalPeople={totalPeople}
+            activeNow={activeNow}
+            totalVisits={totalVisits}
+            topAisle={topAisle}
+            engagementScore={engagementScore}
+          />
+          <div className="grid">
+            <Heatmap aisleStats={aisleStats} />
+            <BarChartPanel aisleStats={aisleStats} />
+          </div>
+          <div className="grid-3">
+            {AISLES.map(aisle => (
+              <AisleCard key={aisle} name={aisle} stats={aisleStats[aisle] || {}} />
+            ))}
+          </div>
+          <Footer footerTime={footerTime} />
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+  {% endraw %}
 </body>
 </html>
