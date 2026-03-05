@@ -1,0 +1,25 @@
+{
+  "last_saved": "2026-03-04 18:56:07",
+  "total_people_seen": 1,
+  "active_now": 1,
+  "aisle_stats": {
+    "Aisle 1": {
+      "glance": 1,
+      "browse": 0,
+      "dwell": 0,
+      "unique_people": 1
+    },
+    "Aisle 2": {
+      "glance": 2,
+      "browse": 2,
+      "dwell": 0,
+      "unique_people": 1
+    },
+    "Aisle 3": {
+      "glance": 4,
+      "browse": 2,
+      "dwell": 0,
+      "unique_people": 1
+    }
+  }
+}

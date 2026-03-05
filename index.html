@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShelfEye Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #F0F4FF;
+      color: #1a1a2e;
+      font-family: Arial, sans-serif;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: linear-gradient(135deg, #1B6CA8, #0D3B6E);
+      padding: 18px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(27,108,168,0.4);
+    }
+    .topbar h1 {
+      font-size: 26px;
+      font-weight: bold;
+      color: white;
+      letter-spacing: 1px;
+    }
+    .topbar .subtitle {
+      font-size: 13px;
+      color: #cce8ff;
+      margin-top: 3px;
+    }
+    .live {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.15);
+      padding: 8px 16px;
+      border-radius: 20px;
+      color: white;
+      font-size: 13px;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      background: #00ff88;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* ── STAT CARDS ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      padding: 25px 30px 10px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      border-top: 4px solid #1B6CA8;
+      transition: transform 0.2s;
+    }
+    .card:hover { transform: translateY(-3px); }
+    .card .value {
+      font-size: 46px;
+      font-weight: bold;
+      color: #1B6CA8;
+    }
+    .card .label {
+      font-size: 13px;
+      color: #888;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    /* ── MAIN GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: 20px 30px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      padding: 0 30px 25px;
+    }
+
+    /* ── PANELS ── */
+    .panel {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .panel h2 {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    /* ── HEATMAP ── */
+    .heatmap {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 10px;
+      height: 240px;
+    }
+    .heatmap-cell {
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.5s;
+      cursor: default;
+      border: 2px solid transparent;
+    }
+    .heatmap-cell:hover {
+      transform: scale(1.05);
+      border-color: #1B6CA8;
+    }
+    .heatmap-cell .cell-count {
+      font-size: 26px;
+      font-weight: bold;
+    }
+    .heatmap-cell .cell-name {
+      font-size: 10px;
+      opacity: 0.85;
+      text-align: center;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* ── AISLE CARDS ── */
+    .aisle-card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .aisle-card h3 {
+      color: #1B6CA8;
+      font-size: 18px;
+      margin-bottom: 16px;
+      font-weight: bold;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #F0F4FF;
+    }
+    .aisle-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .aisle-stat:last-child { border-bottom: none; }
+    .aisle-stat .stat-label {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      color: white;
+      min-width: 40px;
+      text-align: center;
+    }
+    .badge-people { background: #1B6CA8; }
+    .badge-glance { background: #29ABE2; }
+    .badge-browse { background: #F5A623; }
+    .badge-dwell  { background: #27AE60; }
+
+    /* ── LEGEND ── */
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #666;
+    }
+    .legend-dot {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center;
+      padding: 15px;
+      font-size: 12px;
+      color: #aaa;
+      background: white;
+      margin: 0 30px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <h1>👁 ShelfEye</h1>
+    <div class="subtitle">Retail Attention Intelligence Dashboard</div>
+  </div>
+  <div class="live">
+    <div class="dot"></div>
+    <span id="last-updated">Loading...</span>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="cards">
+  <div class="card">
+    <div class="value" id="total-people">0</div>
+    <div class="label">👥 Total People This Session</div>
+  </div>
+  <div class="card">
+    <div class="value" id="active-now">0</div>
+    <div class="label">🟢 In Store Right Now</div>
+  </div>
+  <div class="card">
+    <div class="value" id="total-visits">0</div>
+    <div class="label">📍 Total Aisle Visits</div>
+  </div>
+  <div class="card">
+    <div class="value" id="top-aisle">—</div>
+    <div class="label">🏆 Most Popular Aisle</div>
+  </div>
+</div>
+
+<!-- CHARTS ROW -->
+<div class="grid">
+
+  <!-- HEATMAP -->
+  <div class="panel">
+    <h2>🗺️ Store Attention Heatmap</h2>
+    <div class="heatmap" id="heatmap"></div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#C0392B"></div> High
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#E67E22"></div> Medium
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#27AE60"></div> Low
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#ECF0F1;border:1px solid #ddd"></div> None
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR CHART -->
+  <div class="panel">
+    <h2>📊 Visits Per Aisle Breakdown</h2>
+    <canvas id="barChart" height="220"></canvas>
+  </div>
+
+</div>
+
+<!-- AISLE DETAIL CARDS -->
+<div class="grid-3">
+
+  <div class="aisle-card">
+    <h3>🛒 Aisle 1</h3>
+    <div class="aisle-stat">
+      <span class="stat-label">👥 Unique People</span>
+      <span class="badge badge-people" id="a1-people">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">👀 Glances (3–8s)</span>
+      <span class="badge badge-glance" id="a1-glance">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">🔍 Browses (8–30s)</span>
+      <span class="badge badge-browse" id="a1-browse">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">⏱️ Dwells (30s+)</span>
+      <span class="badge badge-dwell" id="a1-dwell">0</span>
+    </div>
+  </div>
+
+  <div class="aisle-card">
+    <h3>🛒 Aisle 2</h3>
+    <div class="aisle-stat">
+      <span class="stat-label">👥 Unique People</span>
+      <span class="badge badge-people" id="a2-people">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">👀 Glances (3–8s)</span>
+      <span class="badge badge-glance" id="a2-glance">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">🔍 Browses (8–30s)</span>
+      <span class="badge badge-browse" id="a2-browse">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">⏱️ Dwells (30s+)</span>
+      <span class="badge badge-dwell" id="a2-dwell">0</span>
+    </div>
+  </div>
+
+  <div class="aisle-card">
+    <h3>🛒 Aisle 3</h3>
+    <div class="aisle-stat">
+      <span class="stat-label">👥 Unique People</span>
+      <span class="badge badge-people" id="a3-people">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">👀 Glances (3–8s)</span>
+      <span class="badge badge-glance" id="a3-glance">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">🔍 Browses (8–30s)</span>
+      <span class="badge badge-browse" id="a3-browse">0</span>
+    </div>
+    <div class="aisle-stat">
+      <span class="stat-label">⏱️ Dwells (30s+)</span>
+      <span class="badge badge-dwell" id="a3-dwell">0</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  👁 ShelfEye — Retail Attention Intelligence &nbsp;•&nbsp;
+  Refreshes every 3 seconds &nbsp;•&nbsp;
+  <span id="footer-time"></span>
+</div>
+
+<script>
+// ── HEATMAP CELLS ──────────────────────────
+const ZONES = [
+  "Aisle 1 - Top Shelf",    "Aisle 2 - Top Shelf",    "Aisle 3 - Top Shelf",
+  "Aisle 1 - Eye Level",    "Aisle 2 - Eye Level",    "Aisle 3 - Eye Level",
+  "Aisle 1 - Bottom Shelf", "Aisle 2 - Bottom Shelf", "Aisle 3 - Bottom Shelf",
+];
+
+const heatmapEl = document.getElementById("heatmap");
+ZONES.forEach(zone => {
+  const cell = document.createElement("div");
+  cell.className = "heatmap-cell";
+  cell.id = "cell-" + zone.replace(/[^a-zA-Z0-9]/g, "-");
+  cell.style.background = "#ECF0F1";
+  cell.innerHTML = `
+    <span class="cell-count" style="color:#999">0</span>
+    <span class="cell-name" style="color:#aaa">
+      ${zone.replace("Aisle ","A").replace(" Shelf","")}
+    </span>
+  `;
+  heatmapEl.appendChild(cell);
+});
+
+// ── BAR CHART ──────────────────────────────
+const ctx = document.getElementById("barChart").getContext("2d");
+const barChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+    labels: ["Aisle 1", "Aisle 2", "Aisle 3"],
+    datasets: [
+      { label: "Glance",  data:[0,0,0], backgroundColor:"#29ABE2", borderRadius:4 },
+      { label: "Browse",  data:[0,0,0], backgroundColor:"#F5A623", borderRadius:4 },
+      { label: "Dwell",   data:[0,0,0], backgroundColor:"#27AE60", borderRadius:4 },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: { color:"#555", font:{ size:12 } }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: { color:"#666" },
+        grid:  { color:"#f0f0f0" }
+      },
+      y: {
+        stacked: true,
+        ticks: { color:"#666" },
+        grid:  { color:"#f0f0f0" }
+      }
+    }
+  }
+});
+
+// ── HEATMAP COLOR ──────────────────────────
+function heatColor(value, max) {
+  if (max === 0 || value === 0)
+    return { bg:"#ECF0F1", text:"#999" };
+  const ratio = value / max;
+  if (ratio > 0.66) return { bg:"#C0392B", text:"#fff" };
+  if (ratio > 0.33) return { bg:"#E67E22", text:"#fff" };
+  return { bg:"#27AE60", text:"#fff" };
+}
+
+// ── FETCH & UPDATE ─────────────────────────
+function update() {
+  fetch("/data")
+    .then(r => r.json())
+    .then(data => {
+      const stats  = data.aisle_stats || {};
+      const aisles = ["Aisle 1", "Aisle 2", "Aisle 3"];
+
+      // Stat cards
+      document.getElementById("total-people").textContent =
+        data.total_people_seen || 0;
+      document.getElementById("active-now").textContent =
+        data.active_now || 0;
+
+      let totalVisits = 0;
+      let topAisle    = "—";
+      let topCount    = 0;
+
+      aisles.forEach(a => {
+        const s = stats[a] || {};
+        const v = (s.glance||0) + (s.browse||0) + (s.dwell||0);
+        totalVisits += v;
+        if (v > topCount) { topCount = v; topAisle = a; }
+      });
+
+      document.getElementById("total-visits").textContent = totalVisits;
+      document.getElementById("top-aisle").textContent =
+        topAisle.replace("Aisle ","A");
+
+      // Aisle cards
+      const ids = ["a1","a2","a3"];
+      aisles.forEach((aisle, i) => {
+        const s  = stats[aisle] || {};
+        const id = ids[i];
+        document.getElementById(`${id}-people`).textContent = s.unique_people||0;
+        document.getElementById(`${id}-glance`).textContent = s.glance||0;
+        document.getElementById(`${id}-browse`).textContent = s.browse||0;
+        document.getElementById(`${id}-dwell`).textContent  = s.dwell||0;
+      });
+
+      // Bar chart
+      barChart.data.datasets[0].data = aisles.map(a=>(stats[a]||{}).glance||0);
+      barChart.data.datasets[1].data = aisles.map(a=>(stats[a]||{}).browse||0);
+      barChart.data.datasets[2].data = aisles.map(a=>(stats[a]||{}).dwell||0);
+      barChart.update();
+
+      // Heatmap
+      const allCounts = ZONES.map(zone => {
+        const aisle = aisles.find(a => zone.includes(a));
+        const s = stats[aisle] || {};
+        return (s.glance||0) + (s.browse||0) + (s.dwell||0);
+      });
+      const maxCount = Math.max(...allCounts, 1);
+
+      ZONES.forEach(zone => {
+        const cellId = "cell-" + zone.replace(/[^a-zA-Z0-9]/g, "-");
+        const cell   = document.getElementById(cellId);
+        if (!cell) return;
+
+        const aisle = aisles.find(a => zone.includes(a));
+        const s     = stats[aisle] || {};
+        const count = (s.glance||0) + (s.browse||0) + (s.dwell||0);
+        const { bg, text } = heatColor(count, maxCount);
+
+        cell.style.background = bg;
+        cell.querySelector(".cell-count").style.color = text;
+        cell.querySelector(".cell-count").textContent = count;
+        cell.querySelector(".cell-name").style.color  = text;
+      });
+
+      // Last updated
+      const now = new Date();
+      const t   = now.toLocaleTimeString();
+      document.getElementById("last-updated").textContent =
+        "Live • Updated " + t;
+      document.getElementById("footer-time").textContent =
+        "Session started today • " + t;
+    })
+    .catch(() => {
+      document.getElementById("last-updated").textContent =
+        "Waiting for data...";
+    });
+}
+
+update();
+setInterval(update, 3000);
+</script>
+</body>
+</html>
